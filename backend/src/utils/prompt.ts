@@ -47,7 +47,7 @@ JSON FORMAT:
   "timeAllowed": "",
   "maximumMarks": 0,
   "sections": [
-    {
+    { "sectionName": "A,B,C,D..... ",
       "title": "",
       "instruction": "",
       "questions": [
@@ -61,9 +61,13 @@ JSON FORMAT:
     }
   ],
   "answerKey": [
+    { "sectionName": "A,B,C,D..... ",
+    "answers": [
     {
-      "questionNumber": 1,
+     "questionNumber": 1,
       "answer": ""
+    }
+    ]
     }
   ]
 }
