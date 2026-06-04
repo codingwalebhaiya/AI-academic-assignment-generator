@@ -1,10 +1,18 @@
 
 
 export const assignmentPrompt = ({
+  subject,
+  grade,
+  testDuration,
+  dueDate,
   pdfText,
   questionTypes,
   additionalInstructions,
 }: {
+  subject: string;
+  grade: string;
+  testDuration: string;
+  dueDate: Date;
   pdfText: string;
   questionTypes: any[];
   additionalInstructions?: string;
@@ -14,84 +22,53 @@ You are an expert academic assignment paper generator.
 
 Your task is to generate a structured assignment paper STRICTLY based on the provided syllabus content.
 
-IMPORTANT RULES:
+ACADEMIC CONTEXT:
+- Subject: ${subject}
+- Class/Grade: ${grade}
+- Time Limit: ${testDuration} minutes
+- Due Date: ${dueDate}
+- Additional User Instructions: ${additionalInstructions || "None"}
 
-1. Generate questions ONLY from the syllabus.
-2. Do NOT add topics outside the syllabus.
-3. Return ONLY valid JSON.
-4. Do NOT include markdown, explanation, notes, or extra text.
-5. If any information like className or timeAllowed is NOT clearly provided in instructions, return empty string "".
-6. Do NOT generate schoolName.
-7. Keep question language clear, student-friendly, and academically correct.
-8. Difficulty values must only be:
-   - "Easy"
-   - "Medium"
-   - "Hard"
-9. Marks must match question difficulty logically.
-10. Generate answerKey for every question.
-
-SYLLABUS:
+SYLLABUS CONTENT:
 ${pdfText}
 
-QUESTION CONFIGURATION:
-${JSON.stringify(questionTypes)}
+QUESTION CONFIGURATION (STRICT):
+${JSON.stringify(questionTypes, null, 2)}
 
-USER INSTRUCTIONS:
-${additionalInstructions || "No additional instructions provided."}
+IMPORTANT RULES:
+1. Generate questions ONLY from the SYLLABUS CONTENT mentioned above.
+2. Follow the QUESTION CONFIGURATION strictly. For each item in the configuration, create a corresponding section.
+3. Total number of questions and marks for each section must match the configuration exactly.
+4. Difficulty values MUST only be: "Easy", "Moderate", or "Hard".
+5. Return ONLY valid JSON. No markdown wrappers or extra text.
+6. If subject or className is not explicitly clear from the configuration, use the provided Academic Context values.
+7. marks per question must match the configuration.
 
-JSON FORMAT:
-
+JSON FORMAT TO RETURN:
 {
-  "subject": "",
-  "className": "",
-  "timeAllowed": "",
-  "maximumMarks": 0,
+  "subject": "${subject}",
+  "grade": "${grade}",
+  "testDuration": "${testDuration} minutes",
+  "maximumMarks": 0, // Calculate this as total marks of all questions
   "sections": [
-    { "sectionName": "A,B,C,D..... ",
-      "title": "",
-      "instruction": "",
+    {
+      "title": "e.g., Section A: Multiple Choice Questions",
+      "instruction": "e.g., Answer all questions by choosing the correct option.",
       "questions": [
         {
-          "questionNumber": 1,
-          "text": "",
-          "difficulty": "Easy",
+          "text": "The question content here",
+          "difficulty": "Moderate",
           "marks": 2
         }
       ]
     }
-  ],
-  "answerKey": [
-    { "sectionName": "A,B,C,D..... ",
-    "answers": [
-    {
-     "questionNumber": 1,
-      "answer": ""
-    }
-    ]
-    }
   ]
 }
 
-VALIDATION RULES:
-
-- className:
-  -> Fill ONLY if explicitly mentioned in USER INSTRUCTIONS.
-  -> Otherwise return "".
-
-- timeAllowed:
-  -> Fill ONLY if explicitly mentioned in USER INSTRUCTIONS.
-  -> Otherwise return "".
-
-- maximumMarks:
-  -> Calculate from total question marks.
-
-- sections:
-  -> Create sections according to QUESTION CONFIGURATION.
-
-- answerKey:
-  -> Must contain answers for ALL questions.
-
-Return ONLY valid parsable JSON.
+VALIDATION:
+- Calculate "maximumMarks" correctly.
+- Ensure the output strictly follows the structure above for integration with the database.
 `;
 };
+
 

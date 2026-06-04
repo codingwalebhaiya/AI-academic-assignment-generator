@@ -1,43 +1,24 @@
-import { ObjectId } from "mongoose";
 
-// Question Configuration Interface
-export interface IQuestionConfig {
-  type: string;        // "MCQ", "Short Answer", "Long Answer", etc.
-  count: number;       // Number of questions of this type
-  marks: number;       // Marks per question
+export interface IQuestionType {
+  questionType: string;
+  numberOfQuestions: number;
+  marksPerQuestion: number;
 }
 
-// Source File Interface
-export interface ISourceFile {
-  fileName: string;
-  fileUrl: string;
-  mimeType: string;
-}
-
-// Assignment Interface
 export interface IAssignment {
-  title: string;
+  sourceFileUrl: string;
+  sourceFilePublicId: string;
   subject: string;
-  class: string;
+  grade: string;
+  testDuration: string;
   dueDate: Date;
-  // questionConfig: IQuestionConfig[];
-  sections: [
-    questionTypes: string   ,
-    numberOfQuestions: number,
-    marksPerQuestion: number,
-    difficulty: string
-  ];
-  totalQuestions: number;
-  totalMarks: number;
+  pdfText: string;
+  questionTypes: IQuestionType[];
   additionalInstructions?: string | null;
-  sourceFile?: ISourceFile;
   status: 'draft' | 'processing' | 'completed' | 'failed';
   progress: number;
-  jobId?: string;
-  resultId?: ObjectId | IResult;
+  jobId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Import Result type (circular reference solution)
-import { IResult } from "./result.types.js";
+ 

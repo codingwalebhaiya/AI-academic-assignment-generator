@@ -1,55 +1,64 @@
 import Assignment from "../model/assignment.model.js";
 import { Request, Response } from "express";
-import { extractTextFromPDF } from "../utils/pdfParse.js";
-import { assignmentPrompt } from "../utils/prompt.js";
-import { assignmentGenerator } from "../utils/gemini.js";
 import Result from "../model/result.model.js";
+import { assignmentQueue } from "../queue/assignmentResult.queue.js";
+import { uploadOnCloudinary } from "../config/cloudinary.js";
+import { extractTextFromPDF } from "../utils/pdfParse.js";
 
 const createAssignment = async (req: Request, res: Response) => {
     try {
-        const { dueDate, questionTypes, additionalInstructions } = req.body;
+        const { subject, grade, testDuration, dueDate, questionTypes, additionalInstructions } = req.body;
 
-        if (!dueDate || !questionTypes ) {
+        if (!subject || !grade || !testDuration || !dueDate || !questionTypes) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
         const file = req.file;
-        console.log(file)
         if (!file) {
             return res.status(400).json({ message: "File is required" });
         }
 
         const pdfBuffer = file.buffer;
 
+
+        // upload source pdf file to cloudinary 
+        const uploadedSourcePdf = await uploadOnCloudinary(pdfBuffer, "source_pdfs", file.originalname);
+
         const pdfText = await extractTextFromPDF(pdfBuffer);
-        console.log(pdfText);
-        console.log(pdfText.length);
 
-        const prompt = assignmentPrompt({
-            pdfText: pdfText,
-            questionTypes: JSON.parse(questionTypes),
-            additionalInstructions
-        });
-        console.log(prompt)
-
-        const generatedAssignment = await assignmentGenerator(prompt)
-        console.log(generatedAssignment);
-
-        // save to mongodb 
+        // create a assignment  
         const assignment = await Assignment.create({
-            file: req.file?.originalname || "",
+            sourceFileUrl: uploadedSourcePdf.secure_url,
+            sourceFilePublicId: uploadedSourcePdf.public_id,
+            subject,
+            grade,
+            testDuration,
             dueDate,
+            pdfText,
             questionTypes: JSON.parse(questionTypes),
             additionalInstructions,
-        });
+            status: 'processing'
 
-        await Result.create({
-            assignmentId: assignment._id,
-            generatedContent: generatedAssignment
         })
 
-        console.log(assignment);
-        return res.status(201).json({ success: true, message: "Assignment created successfully", assignment, });
+        //Add to BullMQ, passing the MongoDB ID as the payload reference
+        const job = await assignmentQueue.add('generate-assignment',
+            {
+                assignmentId: assignment._id.toString(),
+            },
+            {
+                jobId: assignment._id.toString()
+            }
+        );
+
+        // update jobId 
+        await Assignment.findByIdAndUpdate(assignment._id,
+            {
+                jobId: job.id
+            }
+        )
+
+        return res.status(202).json({ success: true, message: "Assignment generation started", assignment, });
 
     } catch (error) {
         console.log(error);
@@ -64,7 +73,7 @@ const getAssignmentById = async (req: Request, res: Response) => {
 
     try {
         const assignment = await Assignment.findById(req.params.id)
-        console.log(assignment)
+        // console.log(assignment)
         if (!assignment) {
             return res.status(404).json({
                 success: false,
@@ -76,7 +85,6 @@ const getAssignmentById = async (req: Request, res: Response) => {
         const result = await Result.findOne({
             assignmentId: assignment._id
         })
-        console.log(result)
 
         if (!result) {
             return res.status(404).json({
@@ -89,7 +97,9 @@ const getAssignmentById = async (req: Request, res: Response) => {
             success: true,
             message: "Assignment fetched successfully",
             assignment,
-            generatedContent: result?.generatedContent || null
+            generatedContent: result?.sections || null,
+            generatedPdfUrl: result?.generatedPdfUrl || null,
+            generatedPdfPublicId: result?.generatedPdfPublicId || null,
         })
 
     }

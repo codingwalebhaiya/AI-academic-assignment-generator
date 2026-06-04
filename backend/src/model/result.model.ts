@@ -1,18 +1,30 @@
+import { Schema } from "mongoose";
+import { IResult } from "../types/result.types.js";
+import mongoose from "mongoose";
 
-import mongoose, { Schema, Types } from "mongoose";
-
-export interface IResult {
-    assignmentId: Types.ObjectId;
-    generatedContent: Object;
-}
+// this is child schema of assignment model 
 const result = new Schema<IResult>({
     assignmentId: {
         type: Schema.Types.ObjectId,
-        ref: "Assignment",
+        ref: "Assignment",   // child reference to parent model
         required: true
     },
-    generatedContent: {
-        type: Object,
+    sections: [{
+        title: String,
+        instruction: String,
+        questions: [{
+            text: String,
+            difficulty: { type: String, enum: ['Easy', 'Moderate', 'Hard'] },
+            marks: Number
+        }]
+    }],
+    // generated assignment pdf url
+    generatedPdfUrl: {
+        type: String,
+        required: true
+    },
+    generatedPdfPublicId: {
+        type: String,
         required: true
     },
 

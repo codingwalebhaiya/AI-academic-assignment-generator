@@ -1,27 +1,35 @@
 import mongoose, { Schema } from "mongoose";
+import { IAssignment } from "../types/assignment.types.js";
 
-export interface IQuestionType {
-    questionType: string;
-    numberOfQuestions: number;
-    marksPerQuestion: number;
-}
-
-export interface IAssignment {
-    file: string;
-    dueDate: Date;
-    questionTypes: IQuestionType[];
-    additionalInstructions?: string;
-}
-
-
+// this is parent schema
 const assignmentSchema = new Schema<IAssignment>({
-
-    file: {
+    // file will be stored in cloudinary and we will store the url of the file in the database 
+    // file - url and fileType
+    sourceFileUrl: {
+        type: String,
+        required: true,
+    },
+    sourceFilePublicId: {
+        type: String,
+    },
+    subject: {
+        type: String,
+        required: true
+    },
+    grade: {
+        type: String,
+        required: true
+    },
+    testDuration: {
         type: String,
         required: true
     },
     dueDate: {
         type: Date,
+        required: true
+    },
+    pdfText: {
+        type: String,
         required: true
     },
 
@@ -43,6 +51,20 @@ const assignmentSchema = new Schema<IAssignment>({
     additionalInstructions: {
         type: String,
         required: false
+    },
+    status: {
+        type: String,
+        enum: ['draft', 'processing', 'completed', 'failed'],
+        default: 'draft'
+    },
+    progress: {
+        type: Number,
+        default: 0
+    },
+    jobId: {
+        type: String,
+        default: null,
+        index:true
     }
 
 },

@@ -14,8 +14,6 @@ const model = getAI.getGenerativeModel(
 
 console.log(model)
 
-
-
 export default model;
 
   
