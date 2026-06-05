@@ -6,7 +6,7 @@ import errorMiddleware from "./middleware/error.middleware.js";
 import assignmentRoutes from "./route/assignment.route.js";
 //dotenv.config();
 // import worker file path 
-import "../src/worker/assignmentResult.worker.js"
+import "./worker/assignmentResult.worker.js"
 
 const app = express();
 

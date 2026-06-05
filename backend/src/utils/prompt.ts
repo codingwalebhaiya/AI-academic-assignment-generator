@@ -49,7 +49,7 @@ JSON FORMAT TO RETURN:
   "subject": "${subject}",
   "grade": "${grade}",
   "testDuration": "${testDuration} minutes",
-  "maximumMarks": 0, // Calculate this as total marks of all questions
+  "maximumMarks": 0,
   "sections": [
     {
       "title": "e.g., Section A: Multiple Choice Questions",

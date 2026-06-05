@@ -14,13 +14,12 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
     if (!assignment) {
         throw new Error("Assignment not found");
     }
-    //console.log("assignment", assignment)
 
     await job.updateProgress(30);
     await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress:30
+            progress: 30
         }
     )
 
@@ -34,49 +33,51 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
         additionalInstructions: assignment.additionalInstructions as string
     });
 
-    // console.log("prompt", prompt)
+    console.log("prompt text length", prompt.length)
 
     await job.updateProgress(50);
-      await Assignment.findByIdAndUpdate(
+    await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress:50
+            progress: 50
         }
     )
     const generatedAssignment = await assignmentGenerator(prompt);
-     //console.log("generatedAssignment", generatedAssignment)
+    console.log("pdf text length ", generatedAssignment.sections.length.toString())
 
     await job.updateProgress(80);
-      await Assignment.findByIdAndUpdate(
+    await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress:80
+            progress: 80
         }
     )
     const result = await Result.create({
         assignmentId: assignment._id,
         sections: generatedAssignment.sections,
-        generatedPdfUrl: generatedAssignment.generatedPdfUrl,
-        generatedPdfPublicId: generatedAssignment.generatedPdfPublicId,
+        // generatedPdfUrl: generatedAssignment.generatedPdfUrl,
+        // generatedPdfPublicId: generatedAssignment.generatedPdfPublicId,
 
     });
-   // console.log("result in worker ", result)
+    // console.log("result in worker ", result)
 
     assignment.status = "completed";
     await assignment.save();
     await job.updateProgress(100);
-      await Assignment.findByIdAndUpdate(
+    await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress:100
+            progress: 100
         }
     )
     return result;
 },
 
     {
-        connection: redisConfig
+        connection: redisConfig,
+        concurrency: 1
     }
+
 );
 
 // assignmentWorker.on("completed", (job, result) => {

@@ -20,6 +20,6 @@ export interface IResult {
       marks: number;
     }[];
   }[];
-  generatedPdfUrl: string;
-  generatedPdfPublicId: string;
+  generatedPdfUrl?: string;
+  generatedPdfPublicId?: string;
 }

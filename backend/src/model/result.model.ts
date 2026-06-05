@@ -21,11 +21,11 @@ const result = new Schema<IResult>({
     // generated assignment pdf url
     generatedPdfUrl: {
         type: String,
-        required: true
+        required: false
     },
     generatedPdfPublicId: {
         type: String,
-        required: true
+        required: false
     },
 
 },

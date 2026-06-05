@@ -21,12 +21,10 @@ const createAssignment = async (req: Request, res: Response) => {
         const pdfBuffer = file.buffer;
 
 
-        // upload source pdf file to cloudinary 
         const uploadedSourcePdf = await uploadOnCloudinary(pdfBuffer, "source_pdfs", file.originalname);
 
         const pdfText = await extractTextFromPDF(pdfBuffer);
 
-        // create a assignment  
         const assignment = await Assignment.create({
             sourceFileUrl: uploadedSourcePdf.secure_url,
             sourceFilePublicId: uploadedSourcePdf.public_id,
@@ -96,10 +94,10 @@ const getAssignmentById = async (req: Request, res: Response) => {
         return res.status(200).json({
             success: true,
             message: "Assignment fetched successfully",
-            assignment,
-            generatedContent: result?.sections || null,
-            generatedPdfUrl: result?.generatedPdfUrl || null,
-            generatedPdfPublicId: result?.generatedPdfPublicId || null,
+           // assignment,
+             generatedContent: result?.sections || null,
+            // generatedPdfUrl: result?.generatedPdfUrl || null,
+            // generatedPdfPublicId: result?.generatedPdfPublicId || null,
         })
 
     }
