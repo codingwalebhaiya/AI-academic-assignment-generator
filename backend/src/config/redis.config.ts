@@ -33,4 +33,5 @@ const redisConfig = {
 console.log("host", redisConfig.host)
 console.log("port", redisConfig.port)
 
+
 export default redisConfig;  

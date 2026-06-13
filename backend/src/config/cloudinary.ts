@@ -15,7 +15,7 @@ interface UploadResponse {
 }
 
 //  pdf file (source or generated) upload to cloudinary with different folder name (source_pdfs and generated_pdfs)
-const uploadOnCloudinary = (fileBuffer: Buffer, folder = "source_pdfs", fileName?: string): Promise<UploadResponse> => {
+const uploadOnCloudinary = (fileBuffer: Buffer | Uint8Array, folder = "source_pdfs", fileName?: string): Promise<UploadResponse> => {
     return new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {

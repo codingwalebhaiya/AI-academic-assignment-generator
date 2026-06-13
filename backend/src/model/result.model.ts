@@ -10,10 +10,20 @@ const result = new Schema<IResult>({
         required: true
     },
     sections: [{
+        sectionName: String,
         title: String,
         instruction: String,
         questions: [{
             text: String,
+            type: {
+                type: String,
+                enum: ["mcq", "short", "long", "true_false", "fill_blank"],
+                required: true
+            },
+            options: {
+                type: [String],
+                default: []
+            },
             difficulty: { type: String, enum: ['Easy', 'Moderate', 'Hard'] },
             marks: Number
         }]
@@ -21,11 +31,11 @@ const result = new Schema<IResult>({
     // generated assignment pdf url
     generatedPdfUrl: {
         type: String,
-        required: false
+        required: true
     },
     generatedPdfPublicId: {
         type: String,
-        required: false
+        required: true
     },
 
 },

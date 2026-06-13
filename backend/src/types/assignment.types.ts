@@ -1,6 +1,12 @@
+// export type QuestionType =
+//   | "mcq"
+//   | "short"
+//   | "long"
+//   | "true_false"
+//   | "fill_blank";
 
 export interface IQuestionType {
-  questionType: string;
+  questionType:string, 
   numberOfQuestions: number;
   marksPerQuestion: number;
 }

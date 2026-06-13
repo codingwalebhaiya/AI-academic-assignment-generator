@@ -36,6 +36,7 @@ const assignmentSchema = new Schema<IAssignment>({
     questionTypes: [{
         questionType: {
             type: String,
+         //   enum: ["mcq", "short", "long", "true_false", "fill_blank"],
             required: true
         },
         numberOfQuestions: {

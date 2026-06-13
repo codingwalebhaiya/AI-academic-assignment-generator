@@ -12,14 +12,17 @@ import mongoose from "mongoose";
 export interface IResult {
   assignmentId: mongoose.Types.ObjectId;
   sections: {
+    sectionName: string;
     title: string;
     instruction: string;
     questions: {
       text: string;
+      type: "mcq" | "short" | "long" | "true_false" | "fill_blank";
+      options: string[];
       difficulty: string;
       marks: number;
     }[];
   }[];
-  generatedPdfUrl?: string;
-  generatedPdfPublicId?: string;
+  generatedPdfUrl: string;
+  generatedPdfPublicId: string;
 }
