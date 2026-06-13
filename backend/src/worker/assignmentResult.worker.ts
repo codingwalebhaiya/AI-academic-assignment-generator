@@ -1,93 +1,165 @@
+import { uploadOnCloudinary } from "../config/cloudinary.js";
 import redisConfig from "../config/redis.config.js";
 import Assignment from "../model/assignment.model.js";
 import Result from "../model/result.model.js";
+import { assignmentHTML } from "../utils/assignmentTemplate.js";
 import { assignmentGenerator } from "../utils/gemini.js";
+import { generateAssignmentPdf } from "../utils/generateAssignmentPdf.js";
 import { assignmentPrompt } from "../utils/prompt.js";
 import { Worker } from "bullmq"
 
-
 export const assignmentWorker = new Worker("assignment-queue", async (job) => {
+
     const { assignmentId } = job.data;
-    //console.log("assignmentid in worker", assignmentId)
+    console.log("Step 1: assignmentId", assignmentId);
 
     const assignment = await Assignment.findById(assignmentId);
+    console.log("Step 2: assignment found", assignment?._id);
+
     if (!assignment) {
         throw new Error("Assignment not found");
     }
 
-    await job.updateProgress(30);
     await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress: 30
+            progress: 10,
+            status: "processing",
         }
-    )
+    );
 
     const prompt = assignmentPrompt({
         subject: assignment.subject,
         grade: assignment.grade,
-        testDuration: assignment.testDuration,
-        dueDate: assignment.dueDate,
         pdfText: assignment.pdfText,
         questionTypes: assignment.questionTypes,
-        additionalInstructions: assignment.additionalInstructions as string
+        additionalInstructions: assignment.additionalInstructions ?? ""
     });
 
-    console.log("prompt text length", prompt.length)
+    console.log("Step 3: prompt created");
 
-    await job.updateProgress(50);
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 50
-        }
-    )
+
     const generatedAssignment = await assignmentGenerator(prompt);
-    console.log("pdf text length ", generatedAssignment.sections.length.toString())
+    console.log("Step 4: AI generation complete");
 
-    await job.updateProgress(80);
+    if (!generatedAssignment) {
+        throw new Error(
+            "AI failed to generate valid assignment after retries."
+        );
+    }
+
     await Assignment.findByIdAndUpdate(
         assignmentId,
         {
-            progress: 80
+            progress: 40,
         }
+    );
+
+
+    const maxMarks = assignment.questionTypes.reduce(
+        (sum: number, q: any) => sum + q.numberOfQuestions * q.marksPerQuestion,
+        0
+    );
+
+    console.log(maxMarks)
+
+    const html = assignmentHTML({
+        subject: assignment.subject,
+        grade: assignment.grade,
+        testDuration: assignment.testDuration,
+        maxMarks,
+        sections: generatedAssignment.sections,
+    });
+    console.log("HTML length:", html.length);
+    console.log("Step 5: HTML generated", html.length);
+
+
+    await Assignment.findByIdAndUpdate(
+        assignmentId,
+        {
+            progress: 60,
+        }
+    );
+
+    //from this code line - code is not work 
+    const pdfBuffer = await generateAssignmentPdf(html);
+    console.log("step 6: pdf buffer length:", pdfBuffer.length);
+    // if (!pdfBuffer || pdfBuffer.length === 0) {
+    //     throw new Error("Puppeteer returned an empty or invalid PDF buffer");
+    // }
+
+
+    await Assignment.findByIdAndUpdate(
+        assignmentId,
+        {
+            progress: 80,
+        }
+    );
+
+
+
+    const cloudinaryResponse = await uploadOnCloudinary(
+        // Buffer.from(pdfBuffer),
+        pdfBuffer,
+        "generated_assignments",
+        `assignment_${assignmentId}.pdf`
     )
+    console.log("Step 7: Cloudinary upload complete");
+
+
+    if (!cloudinaryResponse?.secure_url) {
+        throw new Error("Cloudinary upload failed to return a secure URL");
+    }
+
+    console.log("cloudinary response", cloudinaryResponse)
+
     const result = await Result.create({
         assignmentId: assignment._id,
         sections: generatedAssignment.sections,
-        // generatedPdfUrl: generatedAssignment.generatedPdfUrl,
-        // generatedPdfPublicId: generatedAssignment.generatedPdfPublicId,
+        generatedPdfUrl: cloudinaryResponse.secure_url,
+        generatedPdfPublicId: cloudinaryResponse.public_id,
+    })
 
-    });
-    // console.log("result in worker ", result)
+    console.log("Step 8: Result saved");
 
-    assignment.status = "completed";
-    await assignment.save();
-    await job.updateProgress(100);
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 100
-        }
-    )
+
+    await Assignment.findByIdAndUpdate(assignmentId, {
+        status: "completed",
+        progress: 100
+    })
     return result;
 },
 
     {
         connection: redisConfig,
-        concurrency: 1
+        concurrency: 2
     }
 
 );
 
-// assignmentWorker.on("completed", (job, result) => {
-//     console.log(`Job ${job.id} completed:`, result);
-// })
 
-// assignmentWorker.on("failed", (job, error) => {
-//     console.log(`Job ${job.id} failed:`, error);
-// })
+assignmentWorker.on("ready", () => {
+    console.log("✅ Worker is ready");
+});
 
-// assignmentWorker.on("error", (error) => {
-//     console.log(`Job ${job.id} progress: ${progress}%`);
-// })
+assignmentWorker.on("failed", async (job, err) => {
+    if (job?.data?.assignmentId) {
+        await Assignment.findByIdAndUpdate(job.data.assignmentId, {
+            status: "failed",
+            progress: 0,
+        });
+    }
+    console.error("Worker job failed:", err);
+});
+
+assignmentWorker.on("completed", (job) => {
+    console.log(`✅ Job ${job?.id} completed`);
+});
+
+assignmentWorker.on("failed", (job, err) => {
+    console.error(`❌ Job ${job?.id} failed:`, err);
+});
+
+assignmentWorker.on("error", (err) => {
+    console.error("❌ Worker error:", err);
+});

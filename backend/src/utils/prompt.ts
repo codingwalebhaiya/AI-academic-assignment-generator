@@ -3,16 +3,12 @@
 export const assignmentPrompt = ({
   subject,
   grade,
-  testDuration,
-  dueDate,
   pdfText,
   questionTypes,
   additionalInstructions,
 }: {
   subject: string;
   grade: string;
-  testDuration: string;
-  dueDate: Date;
   pdfText: string;
   questionTypes: any[];
   additionalInstructions?: string;
@@ -25,8 +21,6 @@ Your task is to generate a structured assignment paper STRICTLY based on the pro
 ACADEMIC CONTEXT:
 - Subject: ${subject}
 - Class/Grade: ${grade}
-- Time Limit: ${testDuration} minutes
-- Due Date: ${dueDate}
 - Additional User Instructions: ${additionalInstructions || "None"}
 
 SYLLABUS CONTENT:
@@ -46,17 +40,21 @@ IMPORTANT RULES:
 
 JSON FORMAT TO RETURN:
 {
-  "subject": "${subject}",
-  "grade": "${grade}",
-  "testDuration": "${testDuration} minutes",
-  "maximumMarks": 0,
   "sections": [
     {
-      "title": "e.g., Section A: Multiple Choice Questions",
+      "sectionName": "e.g., Section A, ...",
+      "title": "e.g., Multiple Choice Questions",
       "instruction": "e.g., Answer all questions by choosing the correct option.",
       "questions": [
         {
+          "type": "mcq",
           "text": "The question content here",
+          "options": [
+            "Rectifier",
+            "Transformer",
+            "Inductor",
+            "Capacitor"
+         ],
           "difficulty": "Moderate",
           "marks": 2
         }
@@ -66,7 +64,6 @@ JSON FORMAT TO RETURN:
 }
 
 VALIDATION:
-- Calculate "maximumMarks" correctly.
 - Ensure the output strictly follows the structure above for integration with the database.
 `;
 };
