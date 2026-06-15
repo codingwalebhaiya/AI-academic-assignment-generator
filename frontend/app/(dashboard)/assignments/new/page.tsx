@@ -13,7 +13,10 @@ export default function Page() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [dueDate, setDueDate] = useState("");
+  const [subject, setSubject] = useState("Math");
+  const [grade, setGrade] = useState("10th");
+  const [testDuration, setTestDuration] = useState("");
+  const [dueDate, setDueDate] = useState("2026-06-04");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
 
   const [questionTypes, setQuestionTypes] = useState([
@@ -73,11 +76,14 @@ export default function Page() {
       setLoading(true);
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("subject", subject);
+      formData.append("grade", grade);
+      formData.append("testDuration", testDuration);
       formData.append("dueDate", dueDate);
       formData.append("questionTypes", JSON.stringify(questionTypes));
       formData.append("additionalInstructions", additionalInstructions);
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:8000/api/v1/assignments",
         formData,
         {
@@ -87,8 +93,8 @@ export default function Page() {
         }
       );
 
-      const assignmentId = response.data.assignment._id;
-      router.push(`/assignments/${assignmentId}`);
+     // const assignmentId = response.data.assignment._id;
+      router.push("/assignments");
     } catch (error) {
       console.log(error);
       alert("Assignment generation failed");
@@ -132,6 +138,12 @@ export default function Page() {
         <ConfigurationStep
           file={file}
           setFile={setFile}
+          subject={subject}
+          setSubject={setSubject}
+          grade={grade}
+          setGrade={setGrade}
+          testDuration={testDuration}
+          setTestDuration={setTestDuration}
           dueDate={dueDate}
           setDueDate={setDueDate}
           additionalInstructions={additionalInstructions}
@@ -146,6 +158,9 @@ export default function Page() {
       ) : (
         <PreviewStep
           file={file}
+          subject={subject}
+          grade={grade}
+          testDuration={testDuration}
           dueDate={dueDate}
           additionalInstructions={additionalInstructions}
           questionTypes={questionTypes}

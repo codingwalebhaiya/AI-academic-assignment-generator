@@ -10,6 +10,9 @@ interface QuestionType {
 
 interface PreviewStepProps {
     file: File | null;
+    subject: string;
+    grade:string;
+    testDuration: string;
     dueDate: string;
     additionalInstructions: string;
     questionTypes: QuestionType[];
@@ -17,6 +20,9 @@ interface PreviewStepProps {
 
 export default function PreviewStep({
     file,
+    subject,
+    grade,
+    testDuration,
     dueDate,
     additionalInstructions,
     questionTypes,
@@ -32,6 +38,18 @@ export default function PreviewStep({
                         <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-gray-500">Selected File</span>
                             <span className="font-medium text-black truncate max-w-[200px]">{file?.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b">
+                            <span className="text-gray-500">Subject</span>
+                            <span className="font-medium text-black">{subject}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b">
+                            <span className="text-gray-500">Grade</span>
+                            <span className="font-medium text-black">{grade}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b">
+                            <span className="text-gray-500">Test Duration</span>
+                            <span className="font-medium text-black">{testDuration}</span>
                         </div>
                         <div className="flex justify-between items-center py-2 border-b">
                             <span className="text-gray-500">Due Date</span>

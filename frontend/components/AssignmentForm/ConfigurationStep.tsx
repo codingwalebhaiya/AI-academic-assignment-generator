@@ -2,6 +2,7 @@
 
 import { FileUp, Calendar, Plus } from "lucide-react";
 import QuestionTypeItem from "./QuestionTypeItem";
+import { useState } from "react";
 
 interface QuestionType {
     questionType: string;
@@ -12,6 +13,12 @@ interface QuestionType {
 interface ConfigurationStepProps {
     file: File | null;
     setFile: (file: File | null) => void;
+    subject: string;
+    setSubject: (subject: string) => void;
+    grade: string;
+    setGrade: (grade: string) => void;
+    testDuration: string;
+    setTestDuration: (testDuration: string) => void;
     dueDate: string;
     setDueDate: (date: string) => void;
     additionalInstructions: string;
@@ -27,6 +34,12 @@ interface ConfigurationStepProps {
 export default function ConfigurationStep({
     file,
     setFile,
+    subject,
+    setSubject,
+    grade,
+    setGrade,
+    testDuration,
+    setTestDuration,
     dueDate,
     setDueDate,
     additionalInstructions,
@@ -38,6 +51,73 @@ export default function ConfigurationStep({
     handleDecrement,
     removeQuestionType,
 }: ConfigurationStepProps) {
+
+    const [isDragging, setIsDragging] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile && droppedFile.type === "application/pdf") {
+            setFile(droppedFile);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile && selectedFile.type === "application/pdf") {
+            setFile(selectedFile);
+        }
+    };
+
+ const subjectOptions = [
+    { value: "Math", label: "Math" },
+    { value: "Science", label: "Science" },
+    { value: "English", label: "English" },
+    { value: "History", label: "History" },
+    { value: "Geography", label: "Geography" },
+    { value: "Computer Science", label: "Computer Science" },
+    { value: "Physics", label: "Physics" },
+    { value: "Chemistry", label: "Chemistry" },
+    { value: "Biology", label: "Biology" },
+    { value: "Other", label: "Other" },
+ ];
+ 
+ const classLevelOptions = [
+    { value: "Class 1", label: "Class 1" },
+    { value: "Class 2", label: "Class 2" },
+    { value: "Class 3", label: "Class 3" },
+    { value: "Class 4", label: "Class 4" },
+    { value: "Class 5", label: "Class 5" },
+    { value: "Class 6", label: "Class 6" },
+    { value: "Class 7", label: "Class 7" },
+    { value: "Class 8", label: "Class 8" },
+    { value: "Class 9", label: "Class 9" },
+    { value: "Class 10", label: "Class 10" },
+    { value: "Class 11", label: "Class 11" },
+    { value: "Class 12", label: "Class 12" },
+    { value: "Other", label: "Other" },
+ ];
+ 
+ const assignmentDurationOptions = [
+    { value: "1 hour", label: "1 hour" },
+    { value: "2 hours", label: "2 hours" },
+    { value: "3 hours", label: "3 hours" },
+    { value: "4 hours", label: "4 hours" },
+    { value: "Other", label: "Other" },
+ ]; 
+
     return (
         <div className="max-w-2xl w-full mx-auto space-y-10 py-6">
             {/* FILE UPLOAD & DATE ROW (VERTICAL ON ALL) */}
@@ -83,6 +163,76 @@ export default function ConfigurationStep({
                             />
                         </label>
                     </div>
+
+                    {/* subject and classLevel and assignmentDuration */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
+                            <input
+                                type="text"
+                                id="subject"
+                                value={subject}
+                                 
+                                onChange={(e) => setSubject(e.target.value)}
+                                className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="classLevel" className="block text-sm font-medium text-gray-700">Class Level</label>
+                            <input
+                                type="text"
+                                id="grade"
+                                value={grade}
+                                onChange={(e) => setGrade(e.target.value)}
+                                className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="assignmentDuration" className="block text-sm font-medium text-gray-700">Assignment Duration</label>
+                            <input
+                                type="text"
+                                id="testDuration"
+                                value={testDuration}
+                                onChange={(e) => setTestDuration(e.target.value)}
+                                className="mt-1 block w-full p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                    </div>  
+
+
+
+                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
+                            <input
+                                type="text"
+                                id="subject"
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="classLevel" className="block text-sm font-medium text-gray-700">Class Level</label>
+                            <input
+                                type="text"
+                                id="classLevel"
+                                value={classLevel}
+                                onChange={(e) => setClassLevel(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="assignmentDuration" className="block text-sm font-medium text-gray-700">Assignment Duration</label>
+                            <input
+                                type="text"
+                                id="assignmentDuration"
+                                value={assignmentDuration}
+                                onChange={(e) => setAssignmentDuration(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            />
+                        </div>
+                    </div> */}
 
                     {/* DUE DATE */}
                     <div className="space-y-4">
