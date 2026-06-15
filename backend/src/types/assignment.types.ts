@@ -6,19 +6,19 @@
 //   | "fill_blank";
 
 export interface IQuestionType {
-  questionType:string, 
+  questionType: string,
   numberOfQuestions: number;
   marksPerQuestion: number;
 }
 
 export interface IAssignment {
-  sourceFileUrl: string;
+  sourceFileUrl?: string;
   sourceFilePublicId: string;
   subject: string;
   grade: string;
   testDuration: string;
   dueDate: Date;
-  pdfText: string;
+  pdfText?: string;
   questionTypes: IQuestionType[];
   additionalInstructions?: string | null;
   status: 'draft' | 'processing' | 'completed' | 'failed';
@@ -27,4 +27,3 @@ export interface IAssignment {
   createdAt: Date;
   updatedAt: Date;
 }
- 

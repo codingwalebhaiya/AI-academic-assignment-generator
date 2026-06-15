@@ -2,8 +2,7 @@ import Assignment from "../model/assignment.model.js";
 import { Request, Response } from "express";
 import Result from "../model/result.model.js";
 import { assignmentQueue } from "../queue/assignmentResult.queue.js";
-import { deleteFromCloudinary, uploadOnCloudinary } from "../config/cloudinary.js";
-import { extractTextFromPDF } from "../utils/pdfParse.js";
+import { deleteFromCloudinary } from "../config/cloudinary.js";
 
 const createAssignment = async (req: Request, res: Response) => {
     try {
@@ -18,31 +17,29 @@ const createAssignment = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "File is required" });
         }
 
-        const pdfBuffer = file.buffer;
-
-
-        const uploadedSourcePdf = await uploadOnCloudinary(pdfBuffer, "source_pdfs", file.originalname);
-
-        const pdfText = await extractTextFromPDF(pdfBuffer);
+        let parsedQuestionTypes;
+        try {
+            parsedQuestionTypes = JSON.parse(questionTypes);
+        } catch (e) {
+            return res.status(400).json({ message: "Invalid questionTypes format" });
+        }
 
         const assignment = await Assignment.create({
-            sourceFileUrl: uploadedSourcePdf.secure_url,
-            sourceFilePublicId: uploadedSourcePdf.public_id,
             subject,
             grade,
             testDuration,
             dueDate,
-            pdfText,
-            questionTypes: JSON.parse(questionTypes),
+            questionTypes: parsedQuestionTypes,
             additionalInstructions,
             status: 'processing'
-
         })
 
-        //Add to BullMQ, passing the MongoDB ID as the payload reference
+        // Add to BullMQ, passing the MongoDB ID and local file path
         const job = await assignmentQueue.add('generate-assignment',
             {
                 assignmentId: assignment._id.toString(),
+                localFilePath: file.path,
+                originalName: file.originalname
             },
             {
                 jobId: assignment._id.toString()

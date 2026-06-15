@@ -6,135 +6,169 @@ import { assignmentHTML } from "../utils/assignmentTemplate.js";
 import { assignmentGenerator } from "../utils/gemini.js";
 import { generateAssignmentPdf } from "../utils/generateAssignmentPdf.js";
 import { assignmentPrompt } from "../utils/prompt.js";
+import { extractTextFromPDF } from "../utils/pdfParse.js";
 import { Worker } from "bullmq"
+import fs from "fs"
 
 export const assignmentWorker = new Worker("assignment-queue", async (job) => {
 
-    const { assignmentId } = job.data;
-    console.log("Step 1: assignmentId", assignmentId);
+    const { assignmentId, localFilePath, originalName } = job.data;
 
     const assignment = await Assignment.findById(assignmentId);
-    console.log("Step 2: assignment found", assignment?._id);
 
     if (!assignment) {
+        // Cleanup if assignment not found
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
         throw new Error("Assignment not found");
     }
 
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 10,
-            status: "processing",
-        }
-    );
-
-    const prompt = assignmentPrompt({
-        subject: assignment.subject,
-        grade: assignment.grade,
-        pdfText: assignment.pdfText,
-        questionTypes: assignment.questionTypes,
-        additionalInstructions: assignment.additionalInstructions ?? ""
-    });
-
-    console.log("Step 3: prompt created");
-
-
-    const generatedAssignment = await assignmentGenerator(prompt);
-    console.log("Step 4: AI generation complete");
-
-    if (!generatedAssignment) {
-        throw new Error(
-            "AI failed to generate valid assignment after retries."
+    try {
+        await Assignment.findByIdAndUpdate(
+            assignmentId,
+            {
+                progress: 5,
+                status: "processing",
+            }
         );
+
+        // Process Source PDF 
+        if (!localFilePath || !fs.existsSync(localFilePath)) {
+            throw new Error("Local file path not found or file does not exist");
+        }
+
+        const fileBuffer = fs.readFileSync(localFilePath);
+
+        // Upload source to Cloudinary
+        const uploadedSourcePdf = await uploadOnCloudinary(fileBuffer, "source_pdfs", originalName);
+
+        // Extract text
+        const pdfText = await extractTextFromPDF(fileBuffer);
+
+        // Update assignment with source info
+        await Assignment.findByIdAndUpdate(assignmentId, {
+            sourceFileUrl: uploadedSourcePdf.secure_url,
+            sourceFilePublicId: uploadedSourcePdf.public_id,
+            pdfText,
+            progress: 10
+        });
+
+        // Update local assignment object for prompt generation
+        assignment.pdfText = pdfText;
+
+
+        const prompt = assignmentPrompt({
+            subject: assignment.subject,
+            grade: assignment.grade,
+            pdfText: assignment.pdfText,
+            questionTypes: assignment.questionTypes,
+            additionalInstructions: assignment.additionalInstructions ?? ""
+        });
+
+        const generatedAssignment = await assignmentGenerator(prompt);
+
+        if (!generatedAssignment) {
+            throw new Error(
+                "AI failed to generate valid assignment after retries."
+            );
+        }
+
+        await Assignment.findByIdAndUpdate(
+            assignmentId,
+            {
+                progress: 40,
+            }
+        );
+
+
+        const maxMarks = assignment.questionTypes.reduce(
+            (sum: number, q: any) => sum + q.numberOfQuestions * q.marksPerQuestion,
+            0
+        );
+
+        const html = assignmentHTML({
+            subject: assignment.subject,
+            grade: assignment.grade,
+            testDuration: assignment.testDuration,
+            maxMarks,
+            sections: generatedAssignment.sections,
+        });
+
+
+        await Assignment.findByIdAndUpdate(
+            assignmentId,
+            {
+                progress: 60,
+            }
+        );
+
+        const pdfBuffer = await generateAssignmentPdf(html);
+        if (!pdfBuffer || pdfBuffer.length === 0) {
+            throw new Error("Puppeteer returned an empty or invalid PDF buffer");
+        }
+
+
+        await Assignment.findByIdAndUpdate(
+            assignmentId,
+            {
+                progress: 80,
+            }
+        );
+
+
+
+        const cloudinaryResponse = await uploadOnCloudinary(
+            pdfBuffer,
+            "generated_assignments",
+            `assignment_${assignmentId}.pdf`
+        )
+
+
+        if (!cloudinaryResponse?.secure_url) {
+            throw new Error("Cloudinary upload failed to return a secure URL");
+        }
+
+
+        const result = await Result.create({
+            assignmentId: assignment._id,
+            sections: generatedAssignment.sections,
+            generatedPdfUrl: cloudinaryResponse.secure_url,
+            generatedPdfPublicId: cloudinaryResponse.public_id,
+        })
+
+
+
+        await Assignment.findByIdAndUpdate(assignmentId, {
+            status: "completed",
+            progress: 100
+        })
+
+        // Cleanup: Delete the local temp file
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            try {
+                fs.unlinkSync(localFilePath);
+                console.log("Step 9: Temp file deleted successfully");
+            } catch (cleanupErr) {
+                console.error("Cleanup error (temp file deletion):", cleanupErr);
+            }
+        }
+
+        return result;
+    } catch (error) {
+        // Cleanup on failure
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            try {
+                fs.unlinkSync(localFilePath);
+            } catch (e) { }
+        }
+        throw error;
     }
-
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 40,
-        }
-    );
-
-
-    const maxMarks = assignment.questionTypes.reduce(
-        (sum: number, q: any) => sum + q.numberOfQuestions * q.marksPerQuestion,
-        0
-    );
-
-    console.log(maxMarks)
-
-    const html = assignmentHTML({
-        subject: assignment.subject,
-        grade: assignment.grade,
-        testDuration: assignment.testDuration,
-        maxMarks,
-        sections: generatedAssignment.sections,
-    });
-    console.log("HTML length:", html.length);
-    console.log("Step 5: HTML generated", html.length);
-
-
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 60,
-        }
-    );
-
-    //from this code line - code is not work 
-    const pdfBuffer = await generateAssignmentPdf(html);
-    console.log("step 6: pdf buffer length:", pdfBuffer.length);
-    // if (!pdfBuffer || pdfBuffer.length === 0) {
-    //     throw new Error("Puppeteer returned an empty or invalid PDF buffer");
-    // }
-
-
-    await Assignment.findByIdAndUpdate(
-        assignmentId,
-        {
-            progress: 80,
-        }
-    );
-
-
-
-    const cloudinaryResponse = await uploadOnCloudinary(
-        // Buffer.from(pdfBuffer),
-        pdfBuffer,
-        "generated_assignments",
-        `assignment_${assignmentId}.pdf`
-    )
-    console.log("Step 7: Cloudinary upload complete");
-
-
-    if (!cloudinaryResponse?.secure_url) {
-        throw new Error("Cloudinary upload failed to return a secure URL");
-    }
-
-    console.log("cloudinary response", cloudinaryResponse)
-
-    const result = await Result.create({
-        assignmentId: assignment._id,
-        sections: generatedAssignment.sections,
-        generatedPdfUrl: cloudinaryResponse.secure_url,
-        generatedPdfPublicId: cloudinaryResponse.public_id,
-    })
-
-    console.log("Step 8: Result saved");
-
-
-    await Assignment.findByIdAndUpdate(assignmentId, {
-        status: "completed",
-        progress: 100
-    })
-    return result;
 },
-
     {
         connection: redisConfig,
-        concurrency: 2
+        concurrency: 1
     }
-
 );
 
 
@@ -154,12 +188,4 @@ assignmentWorker.on("failed", async (job, err) => {
 
 assignmentWorker.on("completed", (job) => {
     console.log(`✅ Job ${job?.id} completed`);
-});
-
-assignmentWorker.on("failed", (job, err) => {
-    console.error(`❌ Job ${job?.id} failed:`, err);
-});
-
-assignmentWorker.on("error", (err) => {
-    console.error("❌ Worker error:", err);
 });

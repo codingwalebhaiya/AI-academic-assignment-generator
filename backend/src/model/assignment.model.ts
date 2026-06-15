@@ -7,7 +7,7 @@ const assignmentSchema = new Schema<IAssignment>({
     // file - url and fileType
     sourceFileUrl: {
         type: String,
-        required: true,
+        // required: true,
     },
     sourceFilePublicId: {
         type: String,
@@ -30,13 +30,13 @@ const assignmentSchema = new Schema<IAssignment>({
     },
     pdfText: {
         type: String,
-        required: true
+        // required: true
     },
 
     questionTypes: [{
         questionType: {
             type: String,
-         //   enum: ["mcq", "short", "long", "true_false", "fill_blank"],
+            //   enum: ["mcq", "short", "long", "true_false", "fill_blank"],
             required: true
         },
         numberOfQuestions: {
@@ -65,7 +65,7 @@ const assignmentSchema = new Schema<IAssignment>({
     jobId: {
         type: String,
         default: null,
-        index:true
+        index: true
     }
 
 },

@@ -6,7 +6,11 @@ export const assignmentQueue = new Queue("assignment-queue",
     {
         connection: redisConfig,
         defaultJobOptions: {
-            attempts: 1,
+            attempts: 3,
+            backoff: {
+                type: "exponential",
+                delay: 5000
+            }
         },
     }
 )
