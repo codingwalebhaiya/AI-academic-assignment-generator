@@ -9,6 +9,7 @@ import { assignmentPrompt } from "../utils/prompt.js";
 import { extractTextFromPDF } from "../utils/pdfParse.js";
 import { Worker } from "bullmq"
 import fs from "fs"
+import { SocketService } from "../config/socket.js";
 
 export const assignmentWorker = new Worker("assignment-queue", async (job) => {
 
@@ -32,6 +33,11 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
                 status: "processing",
             }
         );
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "processing",
+            progress: 5,
+            message: "Starting processing..."
+        });
 
         // Process Source PDF 
         if (!localFilePath || !fs.existsSync(localFilePath)) {
@@ -52,6 +58,12 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             sourceFilePublicId: uploadedSourcePdf.public_id,
             pdfText,
             progress: 10
+        });
+
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "processing",
+            progress: 10,
+            message: "Source PDF processed and uploaded."
         });
 
         // Update local assignment object for prompt generation
@@ -81,6 +93,12 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             }
         );
 
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "processing",
+            progress: 40,
+            message: "AI generation completed."
+        });
+
 
         const maxMarks = assignment.questionTypes.reduce(
             (sum: number, q: any) => sum + q.numberOfQuestions * q.marksPerQuestion,
@@ -103,6 +121,12 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             }
         );
 
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "processing",
+            progress: 60,
+            message: "PDF generation started..."
+        });
+
         const pdfBuffer = await generateAssignmentPdf(html);
         if (!pdfBuffer || pdfBuffer.length === 0) {
             throw new Error("Puppeteer returned an empty or invalid PDF buffer");
@@ -115,6 +139,12 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
                 progress: 80,
             }
         );
+
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "processing",
+            progress: 80,
+            message: "PDF generated successfully."
+        });
 
 
 
@@ -143,6 +173,13 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             status: "completed",
             progress: 100
         })
+
+        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+            status: "completed",
+            progress: 100,
+            message: "Assignment ready!",
+            resultId: result._id
+        });
 
         // Cleanup: Delete the local temp file
         if (localFilePath && fs.existsSync(localFilePath)) {
@@ -181,6 +218,12 @@ assignmentWorker.on("failed", async (job, err) => {
         await Assignment.findByIdAndUpdate(job.data.assignmentId, {
             status: "failed",
             progress: 0,
+        });
+
+        SocketService.emitToAssignment(job.data.assignmentId, "assignment-status", {
+            status: "failed",
+            progress: 0,
+            message: err.message || "Job failed"
         });
     }
     console.error("Worker job failed:", err);
