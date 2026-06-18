@@ -1,24 +1,24 @@
 "use client";
 
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import StepIndicator from "@/components/AssignmentForm/StepIndicator";
-import ConfigurationStep from "@/components/AssignmentForm/ConfigurationStep";
-import PreviewStep from "@/components/AssignmentForm/PreviewStep";
-import NavigationButtons from "@/components/AssignmentForm/NavigationButtons";
+import StepIndicator from "@/features/assignments/components/AssignmentForm/StepIndicator";
+import ConfigurationStep from "@/features/assignments/components/AssignmentForm/ConfigurationStep";
+import PreviewStep from "@/features/assignments/components/AssignmentForm/PreviewStep";
+import NavigationButtons from "@/features/assignments/components/AssignmentForm/NavigationButtons";
+import { useAssignmentMutations } from "@/features/assignments/hooks/useAssignmentMutations";
+import { useDispatch, useSelector } from "react-redux";
 
 export default function Page() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const { createAssignment, isCreating } = useAssignmentMutations();
   const [file, setFile] = useState<File | null>(null);
   const [subject, setSubject] = useState("Math");
   const [grade, setGrade] = useState("10th");
   const [testDuration, setTestDuration] = useState("");
   const [dueDate, setDueDate] = useState("2026-06-04");
   const [additionalInstructions, setAdditionalInstructions] = useState("");
-
   const [questionTypes, setQuestionTypes] = useState([
     {
       questionType: "Multiple Choice Questions",
@@ -31,6 +31,11 @@ export default function Page() {
       marksPerQuestion: 2,
     },
   ]);
+
+  const dispatch = useDispatch();
+  const { isFormOpen, formData } = useSelector((state: any) => state.assignments);
+
+  const { createAssignment: createMut, isCreating: creating } = useAssignmentMutations();
 
   const updateQuestionType = (index: number, field: string, value: any) => {
     const updated = [...questionTypes];
@@ -73,33 +78,22 @@ export default function Page() {
         alert("Please upload file");
         return;
       }
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("subject", subject);
-      formData.append("grade", grade);
-      formData.append("testDuration", testDuration);
-      formData.append("dueDate", dueDate);
-      formData.append("questionTypes", JSON.stringify(questionTypes));
-      formData.append("additionalInstructions", additionalInstructions);
 
-      await axios.post(
-        "http://localhost:8000/api/v1/assignments",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const payload = {
+        file,
+        subject,
+        grade,
+        testDuration,
+        dueDate,
+        questionTypes: JSON.stringify(questionTypes),
+        additionalInstructions,
+      };
 
-     // const assignmentId = response.data.assignment._id;
+      await createAssignment(payload as any);
       router.push("/assignments");
     } catch (error) {
-      console.log(error);
+      console.error("Assignment generation failed:", error);
       alert("Assignment generation failed");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -169,7 +163,7 @@ export default function Page() {
 
       <NavigationButtons
         step={step}
-        loading={loading}
+        loading={isCreating}
         handlePrevious={handlePrevious}
         handleNext={handleNext}
         handleCreateAssignment={handleCreateAssignment}

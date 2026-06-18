@@ -185,7 +185,7 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
         if (localFilePath && fs.existsSync(localFilePath)) {
             try {
                 fs.unlinkSync(localFilePath);
-                console.log("Step 9: Temp file deleted successfully");
+                console.log("Temp file deleted successfully");
             } catch (cleanupErr) {
                 console.error("Cleanup error (temp file deletion):", cleanupErr);
             }

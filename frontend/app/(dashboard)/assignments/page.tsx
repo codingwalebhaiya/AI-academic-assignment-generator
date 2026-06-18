@@ -1,48 +1,22 @@
 "use client";
 
-import Assignments from "@/components/Assignments";
+import AssignmentsGrid from "@/features/assignments/components/AssignmentsPage/AssignmentsGrid";
 import { Button } from "@/components/ui/button";
-import axios from "axios";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
-import { Plus, Loader2, AlertCircle, RefreshCcw, Search, Filter, ChevronDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Loader2, AlertCircle, Search, Filter, ChevronDown, RefreshCcw } from "lucide-react";
+import { useAssignments } from "@/features/assignments/hooks/useAssignments";
+import { useAssignmentMutations } from "@/features/assignments/hooks/useAssignmentMutations";
+import { Assignment as AssignmentItem } from "@/features/assignments/types/assignment";
 
-export interface AssignmentItem {
-  _id: string;
-  assignmentId: string;
-  subject: string;
-  grade: string;
-  testDuration: number;
-  dueDate: string;
-  status: string;
-  sections: any[];
-  generatedPdfUrl: string;
-  generatedPdfPublicId: string;
-}
+export type { AssignmentItem };
 
 export default function AssignmentsPage() {
-  const [assignments, setAssignments] = useState<AssignmentItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("All");
 
-  const fetchAssignments = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await axios.get("http://localhost:8000/api/v1/assignments");
-      setAssignments(response.data.data.assignments);
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAssignments();
-  }, []);
+  const { data: assignments = [], isLoading, error, refetch } = useAssignments();
+  const { deleteAssignment, isDeleting } = useAssignmentMutations();
 
   const subjects = useMemo(() => {
     const subs = Array.from(new Set(assignments.map(a => a.subject)));
@@ -58,15 +32,16 @@ export default function AssignmentsPage() {
   }, [assignments, searchQuery, selectedSubject]);
 
   const handleDeleteAssignment = async (id: string) => {
-    try {
-      await axios.delete(`http://localhost:8000/api/v1/assignments/${id}`);
-      setAssignments((prev) => prev.filter((a) => a._id !== id));
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to delete assignment");
+    if (confirm("Are you sure you want to delete this assignment?")) {
+      try {
+        await deleteAssignment(id);
+      } catch (err: any) {
+        console.error("Delete error:", err);
+      }
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
@@ -83,10 +58,10 @@ export default function AssignmentsPage() {
         </div>
         <div>
           <p className="text-red-700 font-bold text-lg">Error Loading Data</p>
-          <p className="text-sm text-red-600 mt-1">{error}</p>
+          <p className="text-sm text-red-600 mt-1">{(error as any)?.message || "An unexpected error occurred"}</p>
         </div>
         <Button
-          onClick={fetchAssignments}
+          onClick={() => refetch()}
           className="bg-red-600 hover:bg-red-700 text-white rounded-xl flex items-center gap-2 mx-auto"
         >
           <RefreshCcw size={16} /> Try Again
@@ -110,7 +85,7 @@ export default function AssignmentsPage() {
         </div>
 
         <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl px-6 h-12 shadow-lg shadow-primary/10 transition-all hover:scale-105 active:scale-95 shrink-0">
-          <Link href="/assignments/new" className="flex items-center gap-2 font-bold">
+          <Link href="/assignments/create" className="flex items-center gap-2 font-bold">
             <Plus size={18} /> Create New
           </Link>
         </Button>
@@ -166,12 +141,12 @@ export default function AssignmentsPage() {
           </div>
           {!(searchQuery || selectedSubject !== "All") && (
             <Button asChild variant="outline" className="mt-2 rounded-xl border-border text-foreground hover:bg-muted">
-              <Link href="/assignments/new">Create Now</Link>
+              <Link href="/assignments/create">Create Now</Link>
             </Button>
           )}
         </div>
       ) : (
-        <Assignments assignments={filteredAssignments} onDelete={handleDeleteAssignment} />
+        <AssignmentsGrid assignments={filteredAssignments} onDelete={handleDeleteAssignment} />
       )}
     </main>
   );

@@ -4,6 +4,8 @@ import "./globals.css"
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider"
+import QueryProvider from "@/providers/QueryProvider"
+import StoreProvider from "@/providers/StoreProvider"
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -29,9 +31,13 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body className={cn(inter.className, "min-h-screen bg-background text-foreground antialiased")} >
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
+        <StoreProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+          </QueryProvider>
+        </StoreProvider>
       </body>
     </html>
   )

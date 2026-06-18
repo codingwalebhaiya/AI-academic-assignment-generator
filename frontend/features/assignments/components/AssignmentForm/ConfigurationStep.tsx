@@ -201,39 +201,6 @@ export default function ConfigurationStep({
 
 
 
-                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label htmlFor="subject" className="block text-sm font-medium text-gray-700">Subject</label>
-                            <input
-                                type="text"
-                                id="subject"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="classLevel" className="block text-sm font-medium text-gray-700">Class Level</label>
-                            <input
-                                type="text"
-                                id="classLevel"
-                                value={classLevel}
-                                onChange={(e) => setClassLevel(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="assignmentDuration" className="block text-sm font-medium text-gray-700">Assignment Duration</label>
-                            <input
-                                type="text"
-                                id="assignmentDuration"
-                                value={assignmentDuration}
-                                onChange={(e) => setAssignmentDuration(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            />
-                        </div>
-                    </div> */}
-
                     {/* DUE DATE */}
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 mb-2 px-1 text-black">

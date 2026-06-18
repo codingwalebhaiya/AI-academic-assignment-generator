@@ -1,35 +1,21 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
-import axios from "axios";
-import { Download, Loader2, ExternalLink, FileText } from "lucide-react";
+import { Download, Loader2, ExternalLink, FileText, AlertCircle } from "lucide-react";
+import { useAssignment } from "@/features/assignments/hooks/useAssignments";
+import { useState, useEffect, use } from "react";
+
 
 export default function AssignmentOutputPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [loading, setLoading] = useState(true);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: assignment, isLoading, error } = useAssignment(id);
+  const pdfUrl = assignment?.generatedPdfUrl;
+
   // iOS Safari cannot render PDFs inside <iframe> — detect it to show fallback UI
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
   }, []);
-
-  useEffect(() => {
-    const fetchAssignment = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8000/api/v1/assignments/${id}`);
-        setPdfUrl(response.data.data?.generatedPdfUrl);
-      } catch (err: any) {
-        console.error("Error fetching assignment:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAssignment();
-  }, [id]);
 
   const handleDownload = async () => {
     if (!pdfUrl) return;
@@ -47,7 +33,7 @@ export default function AssignmentOutputPage({ params }: { params: Promise<{ id:
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-3 bg-gray-50">
         <Loader2 className="animate-spin text-indigo-600" size={36} />
@@ -58,9 +44,15 @@ export default function AssignmentOutputPage({ params }: { params: Promise<{ id:
 
   if (error || !pdfUrl) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3 bg-gray-50 px-4 text-center">
-        <p className="text-red-500 font-semibold">{error ?? "PDF unavailable"}</p>
-        <button onClick={() => window.location.reload()} className="text-sm text-indigo-600 underline">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-gray-50 px-4 text-center">
+        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-2">
+          <AlertCircle size={32} />
+        </div>
+        <p className="text-red-600 font-bold text-lg">{(error as any)?.message || "PDF unavailable"}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+        >
           Try again
         </button>
       </div>
