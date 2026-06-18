@@ -131,7 +131,7 @@ const getAssignmentById = async (req: Request, res: Response) => {
 // get all assignments 
 const getAllAssignments = async (req: Request, res: Response) => {
 
-    const assignments = await Assignment.find();
+    const assignments = await Assignment.find().sort({ _id: -1 });
     if (!assignments) {
         return res.status(404).json({
             success: false,
