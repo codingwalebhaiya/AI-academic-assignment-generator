@@ -43,10 +43,3 @@ export const getIO = () => {
     return io;
 };
 
-export const SocketService = {
-    emitToAssignment: (assignmentId: string, event: string, data: any) => {
-        if (io) {
-            io.to(`assignment:${assignmentId}`).emit(event, data);
-        }
-    }
-};

@@ -9,7 +9,6 @@ import { assignmentPrompt } from "../utils/prompt.js";
 import { extractTextFromPDF } from "../utils/pdfParse.js";
 import { Worker } from "bullmq"
 import fs from "fs"
-import { SocketService } from "../config/socket.js";
 
 export const assignmentWorker = new Worker("assignment-queue", async (job) => {
 
@@ -32,11 +31,19 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
                 status: "processing",
             }
         );
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
-            status: "processing",
+        // SocketService.emitToAssignment(assignmentId, "assignment-status", {
+        //     status: "processing",
+        //     progress: 5,
+        //     message: "Starting processing..."
+        // }); 
+
+        await job.updateProgress({
             progress: 5,
+            status: "processing",
             message: "Starting processing..."
-        });
+        })
+
+
 
         // Process Source PDF 
         if (!localFilePath || !fs.existsSync(localFilePath)) {
@@ -59,11 +66,11 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             progress: 10
         });
 
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
-            status: "processing",
+        await job.updateProgress({
             progress: 10,
+            status: "processing",
             message: "Source PDF processed and uploaded."
-        });
+        })
 
         // Update local assignment object for prompt generation
         assignment.pdfText = pdfText;
@@ -88,16 +95,15 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
         await Assignment.findByIdAndUpdate(
             assignmentId,
             {
-                progress: 40,
+                progress: 50,
             }
         );
 
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+        await job.updateProgress({
+            progress: 50,
             status: "processing",
-            progress: 40,
             message: "AI generation completed."
         });
-
 
         const maxMarks = assignment.questionTypes.reduce(
             (sum: number, q: any) => sum + q.numberOfQuestions * q.marksPerQuestion,
@@ -120,9 +126,9 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             }
         );
 
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
-            status: "processing",
+        await job.updateProgress({
             progress: 60,
+            status: "processing",
             message: "PDF generation started..."
         });
 
@@ -135,16 +141,17 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
         await Assignment.findByIdAndUpdate(
             assignmentId,
             {
-                progress: 80,
+                progress: 85,
             }
         );
 
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
+        await job.updateProgress({
+            progress: 85,
             status: "processing",
-            progress: 80,
             message: "PDF generated successfully."
         });
 
+        console.log("progress 85%", assignment.progress)
 
 
         const cloudinaryResponse = await uploadOnCloudinary(
@@ -173,9 +180,9 @@ export const assignmentWorker = new Worker("assignment-queue", async (job) => {
             progress: 100
         })
 
-        SocketService.emitToAssignment(assignmentId, "assignment-status", {
-            status: "completed",
+        await job.updateProgress({
             progress: 100,
+            status: "completed",
             message: "Assignment ready!",
             resultId: result._id
         });
@@ -219,11 +226,17 @@ assignmentWorker.on("failed", async (job, err) => {
             progress: 0,
         });
 
-        SocketService.emitToAssignment(job.data.assignmentId, "assignment-status", {
+        job.updateProgress({
             status: "failed",
             progress: 0,
             message: err.message || "Job failed"
-        });
+        })
+
+        // SocketService.emitToAssignment(job.data.assignmentId, "assignment-status", {
+        //     status: "failed",
+        //     progress: 0,
+        //     message: err.message || "Job failed"
+        // });
     }
     console.error("Worker job failed:", err);
 });

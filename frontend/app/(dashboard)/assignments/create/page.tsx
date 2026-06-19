@@ -8,6 +8,7 @@ import PreviewStep from "@/features/assignments/components/AssignmentForm/Previe
 import NavigationButtons from "@/features/assignments/components/AssignmentForm/NavigationButtons";
 import { useAssignmentMutations } from "@/features/assignments/hooks/useAssignmentMutations";
 import { useDispatch, useSelector } from "react-redux";
+import AssignmentCreationProgress from "@/features/assignments/components/AssignmentCreationProgress";
 
 export default function Page() {
   const router = useRouter();
@@ -31,11 +32,10 @@ export default function Page() {
       marksPerQuestion: 2,
     },
   ]);
+  const [currentAssignmentId, setCurrentAssignmentId] = useState<string | null>(null);
 
   const dispatch = useDispatch();
   const { isFormOpen, formData } = useSelector((state: any) => state.assignments);
-
-  const { createAssignment: createMut, isCreating: creating } = useAssignmentMutations();
 
   const updateQuestionType = (index: number, field: string, value: any) => {
     const updated = [...questionTypes];
@@ -89,8 +89,12 @@ export default function Page() {
         additionalInstructions,
       };
 
-      await createAssignment(payload as any);
-      router.push("/assignments");
+      const response: any = await createAssignment(payload as any);
+      if (response?.assignment?._id) {
+        setCurrentAssignmentId(response.assignment._id);
+      } else {
+        throw new Error("Failed to get assignment ID: " + JSON.stringify(response));
+      }
     } catch (error) {
       console.error("Assignment generation failed:", error);
       alert("Assignment generation failed");
@@ -120,24 +124,28 @@ export default function Page() {
         <div className="space-y-1 text-left w-full">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-foreground tracking-tight">
-              {step === 1 ? "Create Assignment" : "Assignment Preview"}
+              {currentAssignmentId ? "Generation Progress" : step === 1 ? "Create Assignment" : "Assignment Preview"}
             </h1>
             <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full border border-primary/20">
               NEW
             </span>
           </div>
           <p className="text-muted-foreground text-sm">
-            {step === 1
-              ? "Upload a PDF and configure your assignment parameters."
-              : "Review your configuration before generating the assignment."}
+            {currentAssignmentId
+              ? "Your assignment is being crafted by AI. Please stay on this page."
+              : step === 1
+                ? "Upload a PDF and configure your assignment parameters."
+                : "Review your configuration before generating the assignment."}
           </p>
         </div>
       </div>
 
-      <StepIndicator step={step} />
+      {!currentAssignmentId && <StepIndicator step={step} />}
 
       <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
-        {step === 1 ? (
+        {currentAssignmentId ? (
+          <AssignmentCreationProgress assignmentId={currentAssignmentId} />
+        ) : step === 1 ? (
           <ConfigurationStep
             file={file}
             setFile={setFile}
@@ -170,15 +178,17 @@ export default function Page() {
           />
         )}
 
-        <div className="mt-8 pt-8 border-t border-border">
-          <NavigationButtons
-            step={step}
-            loading={isCreating}
-            handlePrevious={handlePrevious}
-            handleNext={handleNext}
-            handleCreateAssignment={handleCreateAssignment}
-          />
-        </div>
+        {!currentAssignmentId && (
+          <div className="mt-8 pt-8 border-t border-border">
+            <NavigationButtons
+              step={step}
+              loading={isCreating}
+              handlePrevious={handlePrevious}
+              handleNext={handleNext}
+              handleCreateAssignment={handleCreateAssignment}
+            />
+          </div>
+        )}
       </div>
     </main>
   );

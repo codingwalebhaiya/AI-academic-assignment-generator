@@ -25,8 +25,9 @@ export default function AssignmentsPage() {
 
   const filteredAssignments = useMemo(() => {
     return assignments.filter((assignment) => {
-      const matchesSearch = assignment.subject.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSubject = selectedSubject === "All" || assignment.subject === selectedSubject;
+      const subject = assignment.subject || "";
+      const matchesSearch = subject.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSubject = selectedSubject === "All" || subject === selectedSubject;
       return matchesSearch && matchesSubject;
     });
   }, [assignments, searchQuery, selectedSubject]);
