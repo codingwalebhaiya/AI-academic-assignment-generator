@@ -1,3 +1,8 @@
+type MCQOption = {
+    label: string;
+    text: string;
+};
+
 export function assignmentHTML({
     subject,
     grade,
@@ -106,20 +111,20 @@ ${section.questions.map((q: any, index: number) => `<div class="question">
 
 ${index + 1}. [${q.difficulty}] ${q.text}
 
-${
-  q.type === "mcq" &&
-  Array.isArray(q.options)
-    ? `
-      <ul>
+${q.type === "mcq" &&
+                Array.isArray(q.options)
+                ? `
+       <ul style="list-style:none;padding-left:0;margin-left:0;" >
         ${q.options
-          .map(
-            (option: string) => `<li>${option}</li>`
-          )
-          .join("")}
+                    .map(
+                        (option: MCQOption) =>
+                            `<li>(${option.label}) ${option.text}</li>`
+                    )
+                    .join("")}
       </ul>
     `
-    : ""
-}
+                : ""
+            }
 
 <div class="small">
 [${q.marks} Marks]

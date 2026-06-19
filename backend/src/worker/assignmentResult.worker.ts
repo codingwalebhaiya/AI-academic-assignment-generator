@@ -14,7 +14,6 @@ import { SocketService } from "../config/socket.js";
 export const assignmentWorker = new Worker("assignment-queue", async (job) => {
 
     const { assignmentId, localFilePath, originalName } = job.data;
-
     const assignment = await Assignment.findById(assignmentId);
 
     if (!assignment) {

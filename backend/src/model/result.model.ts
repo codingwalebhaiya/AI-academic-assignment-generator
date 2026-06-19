@@ -20,9 +20,27 @@ const result = new Schema<IResult>({
                 enum: ["mcq", "short", "long", "true_false", "fill_blank"],
                 required: true
             },
+
             options: {
-                type: [String],
-                default: []
+                type: [
+                    {
+
+                        label: {
+                            type: String,
+                            enum: ["a", "b", "c", "d"],
+                            required: true,
+                        },
+                        text: {
+                            type: String,
+                            required: true,
+                        },
+                    }
+                ],
+                default: [],
+            },
+            correctAnswer: {
+                type: String,
+                enum: ["a", "b", "c", "d"]
             },
             difficulty: { type: String, enum: ['Easy', 'Moderate', 'Hard'] },
             marks: Number

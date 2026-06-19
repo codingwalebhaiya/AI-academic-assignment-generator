@@ -30,13 +30,26 @@ QUESTION CONFIGURATION (STRICT):
 ${JSON.stringify(questionTypes, null, 2)}
 
 IMPORTANT RULES:
-1. Generate questions ONLY from the SYLLABUS CONTENT mentioned above.
-2. Follow the QUESTION CONFIGURATION strictly. For each item in the configuration, create a corresponding section.
-3. Total number of questions and marks for each section must match the configuration exactly.
-4. Difficulty values MUST only be: "Easy", "Moderate", or "Hard".
-5. Return ONLY valid JSON. No markdown wrappers or extra text.
-6. If subject or className is not explicitly clear from the configuration, use the provided Academic Context values.
-7. marks per question must match the configuration.
+1. Generate questions only from the provided SYLLABUS CONTENT.
+2. Follow QUESTION CONFIGURATION exactly (sections, question count, and marks).
+3. Use only these difficulty values: Easy, Moderate, Hard.
+4. Return valid JSON only. No markdown or extra text.
+5. Use the provided Subject and Grade when needed.
+6. Use only these question types:
+ * mcq
+ * short
+ * long
+ * true_false
+ * fill_blank
+7. Never use: short_answer, long_answer, truefalse, fillintheblank, essay, descriptive, or any other type.
+8. For MCQ:
+
+   * Include exactly 4 options.
+   * Options format: { "label": "a|b|c|d", "text": "Option" }.
+   * Labels must be a, b, c, d in order.
+9. For non-MCQ questions, return "options": [].
+10. Ensure all fields match the specified JSON schema exactly.
+
 
 JSON FORMAT TO RETURN:
 {
@@ -50,12 +63,24 @@ JSON FORMAT TO RETURN:
           "type": "mcq",
           "text": "The question content here",
           "options": [
-            "Rectifier",
-            "Transformer",
-            "Inductor",
-            "Capacitor"
-         ],
-          "difficulty": "Moderate",
+    {
+      "label": "a",
+      "text": "Rectifier"
+    },
+    {
+      "label": "b",
+      "text": "Transformer"
+    },
+    {
+      "label": "c",
+      "text": "Inductor"
+    },
+    {
+      "label": "d",
+      "text": "Capacitor"
+    }
+  ]
+         "difficulty": "Moderate",
           "marks": 2
         }
       ]

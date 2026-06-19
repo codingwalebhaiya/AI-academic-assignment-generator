@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 // If you ever need to support both the ID and the Populated Object
 // assignmentId: mongoose.Types.ObjectId | IAssignment; 
 
+
 export interface IResult {
   assignmentId: mongoose.Types.ObjectId;
   sections: {
@@ -18,7 +19,11 @@ export interface IResult {
     questions: {
       text: string;
       type: "mcq" | "short" | "long" | "true_false" | "fill_blank";
-      options: string[];
+      options: {
+        label: string;
+        text: string;
+      }[];
+      correctAnswer: string;
       difficulty: string;
       marks: number;
     }[];
