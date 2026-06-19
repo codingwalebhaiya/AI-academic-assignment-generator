@@ -114,60 +114,72 @@ export default function Page() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 space-y-8 bg-white min-h-screen">
-      <StepIndicator step={step} />
-
-      <div className="space-y-2 text-center text-black">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {step === 1 ? "Create Assignment" : "Assignment Preview"}
-        </h1>
-        <p className="text-gray-500">
-          {step === 1
-            ? "Upload a PDF and configure your assignment parameters."
-            : "Review your configuration before generating the assignment."}
-        </p>
+    <main className="space-y-8 pb-20 max-w-4xl mx-auto">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1 text-left w-full">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-foreground tracking-tight">
+              {step === 1 ? "Create Assignment" : "Assignment Preview"}
+            </h1>
+            <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full border border-primary/20">
+              NEW
+            </span>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {step === 1
+              ? "Upload a PDF and configure your assignment parameters."
+              : "Review your configuration before generating the assignment."}
+          </p>
+        </div>
       </div>
 
-      {step === 1 ? (
-        <ConfigurationStep
-          file={file}
-          setFile={setFile}
-          subject={subject}
-          setSubject={setSubject}
-          grade={grade}
-          setGrade={setGrade}
-          testDuration={testDuration}
-          setTestDuration={setTestDuration}
-          dueDate={dueDate}
-          setDueDate={setDueDate}
-          additionalInstructions={additionalInstructions}
-          setAdditionalInstructions={setAdditionalInstructions}
-          questionTypes={questionTypes}
-          addQuestionType={addQuestionType}
-          updateQuestionType={updateQuestionType}
-          handleIncrement={handleIncrement}
-          handleDecrement={handleDecrement}
-          removeQuestionType={removeQuestionType}
-        />
-      ) : (
-        <PreviewStep
-          file={file}
-          subject={subject}
-          grade={grade}
-          testDuration={testDuration}
-          dueDate={dueDate}
-          additionalInstructions={additionalInstructions}
-          questionTypes={questionTypes}
-        />
-      )}
+      <StepIndicator step={step} />
 
-      <NavigationButtons
-        step={step}
-        loading={isCreating}
-        handlePrevious={handlePrevious}
-        handleNext={handleNext}
-        handleCreateAssignment={handleCreateAssignment}
-      />
-    </div>
+      <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
+        {step === 1 ? (
+          <ConfigurationStep
+            file={file}
+            setFile={setFile}
+            subject={subject}
+            setSubject={setSubject}
+            grade={grade}
+            setGrade={setGrade}
+            testDuration={testDuration}
+            setTestDuration={setTestDuration}
+            dueDate={dueDate}
+            setDueDate={setDueDate}
+            additionalInstructions={additionalInstructions}
+            setAdditionalInstructions={setAdditionalInstructions}
+            questionTypes={questionTypes}
+            addQuestionType={addQuestionType}
+            updateQuestionType={updateQuestionType}
+            handleIncrement={handleIncrement}
+            handleDecrement={handleDecrement}
+            removeQuestionType={removeQuestionType}
+          />
+        ) : (
+          <PreviewStep
+            file={file}
+            subject={subject}
+            grade={grade}
+            testDuration={testDuration}
+            dueDate={dueDate}
+            additionalInstructions={additionalInstructions}
+            questionTypes={questionTypes}
+          />
+        )}
+
+        <div className="mt-8 pt-8 border-t border-border">
+          <NavigationButtons
+            step={step}
+            loading={isCreating}
+            handlePrevious={handlePrevious}
+            handleNext={handleNext}
+            handleCreateAssignment={handleCreateAssignment}
+          />
+        </div>
+      </div>
+    </main>
   );
 }
